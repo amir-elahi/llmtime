@@ -17,4 +17,6 @@ pip install SentencePiece
 pip install accelerate
 pip install gdown
 pip install mistralai #for mistral models
+pip install loguru
+pip install python-dotenv
 conda deactivate
