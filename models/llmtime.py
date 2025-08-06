@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from dataclasses import dataclass
 from models.llms import completion_fns, nll_fns, tokenization_fns, context_lengths
+from functools import partial
 
 STEP_MULTIPLIER = 1.2
 
@@ -192,6 +193,8 @@ def get_llmtime_predictions_data(train, test, model, settings, num_samples=10, t
 
     assert model in completion_fns, f'Invalid model {model}, must be one of {list(completion_fns.keys())}'
     completion_fn = completion_fns[model]
+    if (chatgpt_sys_message := kwargs.pop('chatgpt_sys_message', None)):
+        completion_fn = partial(completion_fn, chatgpt_sys_message=chatgpt_sys_message)
     nll_fn = nll_fns[model] if model in nll_fns else None
     
     if isinstance(settings, dict):

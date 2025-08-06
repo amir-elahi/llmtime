@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from models.utils import grid_iter
 from dataclasses import is_dataclass
 from typing import Any
+from functools import partial
 
 def make_validation_dataset(train, n_val, val_length):
     """Partition the training set into training and validation sets.
@@ -47,7 +48,7 @@ def evaluate_hyper(hyper, train_minus_val, val, get_predictions_fn):
     return get_predictions_fn(train_minus_val, val, **hyper, num_samples=0)['NLL/D']
 
 
-def get_autotuned_predictions_data(train, test, hypers, num_samples, get_predictions_fn, verbose=False, parallel=True, n_train=None, n_val=None):
+def get_autotuned_predictions_data(train, test, hypers, num_samples, get_predictions_fn, verbose=False, parallel=True, n_train=None, n_val=None, **kwargs):
     """
     Automatically tunes hyperparameters based on validation likelihood and retrieves predictions using the best hyperparameters. The validation set is constructed on the fly by splitting the training set.
 
@@ -65,6 +66,8 @@ def get_autotuned_predictions_data(train, test, hypers, num_samples, get_predict
     Returns:
         dict: Dictionary containing predictions, best hyperparameters, and other related information.
     """
+    if (chatgpt_sys_message := kwargs.pop('chatgpt_sys_message', None)):
+        get_predictions_fn = partial(get_predictions_fn, chatgpt_sys_message=chatgpt_sys_message)
     if isinstance(hypers,dict):
         hypers = list(grid_iter(hypers))
     else:
