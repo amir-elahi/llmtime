@@ -3,7 +3,7 @@ import openai
 import tiktoken
 import numpy as np
 from jax import grad,vmap
-
+from loguru import logger
 
 def tokenize_fn(str, model):
     """
@@ -74,6 +74,8 @@ def gpt_completion_fn(model, input_str, steps, settings, num_samples, temp, **kw
             "Please continue the following sequence without producing any additional text. "
             "Do not say anything like 'the next terms in the sequence are', just return the numbers. Sequence:\n"
         )
+        logger.debug(f"sys_message: {chatgpt_sys_message}")
+        logger.debug(f"user_message: {extra_input+input_str+settings.time_sep}")
 
         response = openai.ChatCompletion.create(
             model=model,
