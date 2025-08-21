@@ -19,4 +19,6 @@ pip install gdown
 pip install mistralai #for mistral models
 pip install loguru
 pip install python-dotenv
+#! Add chronos installation
+pip install chronos-frecasting
 conda deactivate
