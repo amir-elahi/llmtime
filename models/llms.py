@@ -10,7 +10,8 @@ from models.mistral import tokenize_fn as mistral_tokenize_fn
 from models.mistral_api import mistral_api_completion_fn, mistral_api_nll_fn
 from models.mistral_api import tokenize_fn as mistral_api_tokenize_fn
 
-
+from models.gptoss import gptoss_nll_fn, gptoss_completion_fn
+from models.gemma import gemma_completion_fn, gemma_nll_fn
 # Required: Text completion function for each model
 # -----------------------------------------------
 # Each model is mapped to a function that samples text completions.
@@ -40,6 +41,9 @@ completion_fns = {
     'llama-7b-chat': partial(llama_completion_fn, model='7b-chat'),
     'llama-13b-chat': partial(llama_completion_fn, model='13b-chat'),
     'llama-70b-chat': partial(llama_completion_fn, model='70b-chat'),
+    'gpt-oss': partial(gptoss_completion_fn, model='gpt-oss'),
+    'gemma-27b': partial(gemma_completion_fn, model='gemma-27b'),
+    'gemma-12b': partial(gemma_completion_fn, model='gemma-12b'),
 }
 
 # Optional: NLL/D functions for each model
@@ -72,6 +76,9 @@ nll_fns = {
     'llama-7b-chat': partial(llama_nll_fn, model='7b-chat'),
     'llama-13b-chat': partial(llama_nll_fn, model='13b-chat'),
     'llama-70b-chat': partial(llama_nll_fn, model='70b-chat'),
+    'gpt-oss': partial(gptoss_nll_fn, model='gpt-oss'),
+    'gemma-27b': partial(gemma_nll_fn, model='gemma-27b'),
+    'gemma-12b': partial(gemma_nll_fn, model='gemma-12b'),
 }
 
 # Optional: Tokenization function for each model, only needed if you want automatic input truncation.
@@ -110,4 +117,5 @@ context_lengths = {
     'llama-7b-chat': 4096,
     'llama-13b-chat': 4096,
     'llama-70b-chat': 4096,
+    'gpt-oss': 131_070,
 }
