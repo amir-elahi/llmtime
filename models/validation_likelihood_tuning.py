@@ -70,7 +70,7 @@ def get_autotuned_predictions_data(train, test, hypers, num_samples, get_predict
         get_predictions_fn = partial(get_predictions_fn, chatgpt_sys_message=chatgpt_sys_message)
     if (extra_input := kwargs.pop('extra_input', None)):
         get_predictions_fn = partial(get_predictions_fn, extra_input=extra_input)
-    if (few_shot_median := kwargs.pop('few_shot_median', True)):
+    if (few_shot_median := kwargs.pop('few_shot_median', None)):
         get_predictions_fn = partial(get_predictions_fn, few_shot_median=few_shot_median)
     if isinstance(hypers,dict):
         hypers = list(grid_iter(hypers))
