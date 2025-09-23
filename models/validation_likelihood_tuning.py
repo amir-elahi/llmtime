@@ -72,6 +72,10 @@ def get_autotuned_predictions_data(train, test, hypers, num_samples, get_predict
         get_predictions_fn = partial(get_predictions_fn, extra_input=extra_input)
     if (few_shot_median := kwargs.pop('few_shot_median', None)):
         get_predictions_fn = partial(get_predictions_fn, few_shot_median=few_shot_median)
+    if (Co_variates := kwargs.pop('Co_variates', None)):
+        get_predictions_fn = partial(get_predictions_fn, Co_variates=Co_variates)
+    if (Co_variate_texts := kwargs.pop('Co_variate_texts', None)):
+        get_predictions_fn = partial(get_predictions_fn, Co_variate_texts=Co_variate_texts)
     if isinstance(hypers,dict):
         hypers = list(grid_iter(hypers))
     else:
