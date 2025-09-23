@@ -149,6 +149,8 @@ def gemma_completion_fn(
     
     if kwargs.get('extra_input', None) is not None:
         input_str = kwargs['extra_input'] + input_str
+    if kwargs.get('co_variates', None) is not None:
+        input_str = kwargs['co_variates'] + input_str
     if kwargs.get('chatgpt_sys_message', None) is not None:
         input_str =  kwargs['chatgpt_sys_message'] + input_str
 

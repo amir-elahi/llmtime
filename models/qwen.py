@@ -10,7 +10,6 @@ from transformers import (
 from data.serialize import serialize_arr, deserialize_str, SerializerSettings
 from loguru import logger
 import os
-import re
 
 os.environ["CUDA_HOME"] = "/data2/InstallFolder"
 os.environ["PATH"] = f"/data2/InstallFolder/bin:{os.environ['PATH']}"
@@ -19,41 +18,44 @@ os.environ["C_INCLUDE_PATH"] = f"/data2/InstallFolder/include:{os.environ.get('C
 os.environ["CPLUS_INCLUDE_PATH"] = f"/data2/InstallFolder/include:{os.environ.get('CPLUS_INCLUDE_PATH', '')}"
 
 
-# DEFAULT_EOS_TOKEN = "</s>"
-# DEFAULT_BOS_TOKEN = "<s>"
-# DEFAULT_UNK_TOKEN = "<unk>"
-MODEL_PATH = "/data2/amir/HF_home/models--openai--gpt-oss-20b/snapshots/6cee5e81ee83917806bbde320786a8fb61efebee/"
+DEFAULT_EOS_TOKEN = "</s>"
+DEFAULT_BOS_TOKEN = "<s>"
+DEFAULT_UNK_TOKEN = "<unk>"
+
+def get_model_path(model):
+    if model == "qwen-30b":
+        return "/data2/amir/HF_home/models--Qwen--Qwen3-30B-A3B/snapshots/ae659febe817e4b3ebd7355f47792725801204c9"
+    else:
+        raise ValueError(f"Unknown model: {model}")
 
 loaded = {}
 
-def get_tokenizer():
+def get_tokenizer(model):
     tokenizer = AutoTokenizer.from_pretrained(
-        MODEL_PATH,
+        get_model_path(model),
         # device_map = "auto",
         # dtype="auto",
         local_files_only=True
     )
-    # special_tokens_dict = dict()
-    # if tokenizer.eos_token is None:
-    #     special_tokens_dict["eos_token"] = DEFAULT_EOS_TOKEN
-    # if tokenizer.bos_token is None:
-    #     special_tokens_dict["bos_token"] = DEFAULT_BOS_TOKEN
-    # if tokenizer.unk_token is None:
-    #     special_tokens_dict["unk_token"] = DEFAULT_UNK_TOKEN
-    # tokenizer.add_special_tokens(special_tokens_dict)
-    # tokenizer.pad_token = tokenizer.eos_token
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
+    special_tokens_dict = dict()
+    if tokenizer.eos_token is None:
+        special_tokens_dict["eos_token"] = DEFAULT_EOS_TOKEN
+    if tokenizer.bos_token is None:
+        special_tokens_dict["bos_token"] = DEFAULT_BOS_TOKEN
+    if tokenizer.unk_token is None:
+        special_tokens_dict["unk_token"] = DEFAULT_UNK_TOKEN
+    tokenizer.add_special_tokens(special_tokens_dict)
+    tokenizer.pad_token = tokenizer.eos_token
     return tokenizer
 
 def get_model_and_tokenizer(model_name, cache_model=False):
     if model_name in loaded:
         return loaded[model_name]
-    tokenizer = get_tokenizer()
+    tokenizer = get_tokenizer(model_name)
    
     # model = AutoModelForCausalLM.from_pretrained("mistralai/Mistral-7B-v0.1",device_map="cpu")
     model = AutoModelForCausalLM.from_pretrained(
-        MODEL_PATH,
+        get_model_path(model_name),
         device_map="auto",
         dtype="auto",
         local_files_only=True,
@@ -68,10 +70,10 @@ def get_model_and_tokenizer(model_name, cache_model=False):
     return model, tokenizer
 
 def tokenize_fn(str, model):
-    tokenizer = get_tokenizer()
+    tokenizer = get_tokenizer(model)
     return tokenizer(str)
 
-def gptoss_nll_fn(model, input_arr, target_arr, settings:SerializerSettings, transform, count_seps=True, temp=1, cache_model=True):
+def qwen_nll_fn(model, input_arr, target_arr, settings:SerializerSettings, transform, count_seps=True, temp=1, cache_model=True):
     """ Returns the NLL/dimension (log base e) of the target array (continuous) according to the LM 
         conditioned on the input array. Applies relevant log determinant for transforms and
         converts from discrete NLL of the LLM to continuous by assuming uniform within the bins.
@@ -101,10 +103,7 @@ def gptoss_nll_fn(model, input_arr, target_arr, settings:SerializerSettings, tra
     good_tokens_str = list("0123456789" + settings.time_sep)
     good_tokens = [tokenizer.convert_tokens_to_ids(token) for token in good_tokens_str]
     bad_tokens = [i for i in range(len(tokenizer)) if i not in good_tokens]
-    # out['logits'][:,:,bad_tokens] = -100
-    mask_value = -10.0  # can tune, e.g., -5 to -15
-    out["logits"][:, :, bad_tokens] += mask_value
-
+    out['logits'][:,:,bad_tokens] = -100
 
     input_ids = batch['input_ids'][0][1:]
     input_ids = input_ids.to('cpu')
@@ -133,7 +132,7 @@ def gptoss_nll_fn(model, input_arr, target_arr, settings:SerializerSettings, tra
 
     return transformed_nll-avg_logdet_dydx
 
-def gptoss_completion_fn(
+def qwen_completion_fn(
     model,
     input_str,
     steps,
@@ -148,6 +147,8 @@ def gptoss_completion_fn(
     
     if kwargs.get('extra_input', None) is not None:
         input_str = kwargs['extra_input'] + input_str
+    if kwargs.get('co_variates', None) is not None:
+        input_str = kwargs['co_variates'] + input_str
     if kwargs.get('chatgpt_sys_message', None) is not None:
         input_str =  kwargs['chatgpt_sys_message'] + input_str
 
@@ -176,32 +177,12 @@ def gptoss_completion_fn(
         # good_tokens_str = list("0123456789" + settings.time_sep)
         # good_tokens = [tokenizer.convert_tokens_to_ids(token) for token in good_tokens_str]
         # good_tokens += [tokenizer.eos_token_id]
-        # good_tokens = [
-        #     tok_id for tok, tok_id in tokenizer.get_vocab().items()
-        #     if tok.strip().isdigit() or tok == settings.time_sep
-        # ]
+        good_tokens = [
+            tok_id for tok, tok_id in tokenizer.get_vocab().items()
+            if tok.strip().isdigit() or tok == settings.time_sep
+        ]
 
-        # bad_tokens = [i for i in range(len(tokenizer)) if i not in good_tokens]
-
-        # vocab = tokenizer.get_vocab()
-        # good_tokens = []
-
-        # for tok, tok_id in vocab.items():
-        #     # allow tokens that are purely decimal integers (e.g., "1", "23", "4567")
-        #     if re.fullmatch(r"\d+", tok):
-        #         good_tokens.append(tok_id)
-        #     # allow tokens with leading space/underscore and digits (e.g., "▁123", "Ġ456")
-        #     elif re.fullmatch(r"[▁Ġ]?\d+", tok):
-        #         good_tokens.append(tok_id)
-        #     # allow comma separator
-        #     elif tok == ",":
-        #         good_tokens.append(tok_id)
-
-        # # always include EOS to allow clean stopping
-        # if tokenizer.eos_token_id is not None:
-        #     good_tokens.append(tokenizer.eos_token_id)
-
-        # bad_tokens = [i for i in range(len(tokenizer)) if i not in good_tokens]
+        bad_tokens = [i for i in range(len(tokenizer)) if i not in good_tokens]
 
         generate_ids = model.generate(
             **batch,
@@ -209,7 +190,7 @@ def gptoss_completion_fn(
             max_new_tokens=max_tokens,
             temperature=temp, 
             top_p=top_p, 
-            # bad_words_ids=[[t] for t in bad_tokens],
+            bad_words_ids=[[t] for t in bad_tokens],
             renormalize_logits=True,
         )
         gen_strs += tokenizer.batch_decode(

@@ -74,14 +74,17 @@ def gpt_completion_fn(model, input_str, steps, settings, num_samples, temp, **kw
             "Please continue the following sequence without producing any additional text. "
             "Do not say anything like 'the next terms in the sequence are', just return the numbers. Sequence:\n"
         )
+
+        co_variates = kwargs.get('co_variates', '')
+
         logger.debug(f"sys_message: {chatgpt_sys_message}")
-        logger.debug(f"user_message: {extra_input+input_str+settings.time_sep}")
+        logger.debug(f"user_message: {co_variates+extra_input+input_str+settings.time_sep}")
 
         response = openai.ChatCompletion.create(
             model=model,
             messages=[
                     {"role": "system", "content": chatgpt_sys_message},
-                    {"role": "user", "content": extra_input+input_str+settings.time_sep}
+                    {"role": "user", "content": co_variates+extra_input+input_str+settings.time_sep}
                 ],
             max_tokens=int(avg_tokens_per_step*steps), 
             temperature=temp,
