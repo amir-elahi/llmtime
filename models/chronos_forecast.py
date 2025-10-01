@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt  # requires: pip install matplotlib
 pipeline = BaseChronosPipeline.from_pretrained(
     "amazon/chronos-bolt-small",  # use "amazon/chronos-bolt-small" for the corresponding Chronos-Bolt model
     device_map="cpu",  # use "cpu" for CPU inference
-    torch_dtype=torch.bfloat16,
+    dtype=torch.bfloat16,
 )
 
 
