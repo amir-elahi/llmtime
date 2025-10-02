@@ -163,3 +163,5 @@ cython_debug/
 
 # custom exclusions
 /data/output
+/outputs
+/data/AEML
