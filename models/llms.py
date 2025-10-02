@@ -13,6 +13,8 @@ from models.mistral_api import tokenize_fn as mistral_api_tokenize_fn
 from models.gptoss import gptoss_nll_fn, gptoss_completion_fn
 from models.gemma import gemma_completion_fn, gemma_nll_fn
 from models.qwen import qwen_completion_fn, qwen_nll_fn
+# from models.kimmi import kimmi_completion_fn, kimmi_nll_fn
+
 # Required: Text completion function for each model
 # -----------------------------------------------
 # Each model is mapped to a function that samples text completions.
@@ -46,6 +48,7 @@ completion_fns = {
     'gemma-27b': partial(gemma_completion_fn, model='gemma-27b'),
     'gemma-12b': partial(gemma_completion_fn, model='gemma-12b'),
     'qwen-30b': partial(qwen_completion_fn, model='qwen-30b'),
+    # 'kimmi-VL-A3B': partial(kimmi_completion_fn, model='kimmi-VL-A3B'),
 }
 
 # Optional: NLL/D functions for each model
@@ -82,6 +85,7 @@ nll_fns = {
     'gemma-27b': partial(gemma_nll_fn, model='gemma-27b'),
     'gemma-12b': partial(gemma_nll_fn, model='gemma-12b'),
     'qwen-30b': partial(qwen_nll_fn, model='qwen-30b'),
+    # 'kimmi-VL-A3B': partial(kimmi_nll_fn, model='kimmi-VL-A3B'),
 }
 
 # Optional: Tokenization function for each model, only needed if you want automatic input truncation.
