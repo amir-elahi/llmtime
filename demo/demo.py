@@ -1,10 +1,22 @@
 import os
-import torch
+import sys
+from pathlib import Path
+
 os.environ['OMP_NUM_THREADS'] = '4'
+
+PROJECT_ROOT = Path.cwd()
+while PROJECT_ROOT != PROJECT_ROOT.parent and not (PROJECT_ROOT / "models").exists():
+    PROJECT_ROOT = PROJECT_ROOT.parent
+PROJECT_ROOT = PROJECT_ROOT.resolve()
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+import torch
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import openai
+
 openai.api_key = os.environ['OPENAI_API_KEY']
 openai.api_base = os.environ.get("OPENAI_API_BASE", "https://api.openai.com/v1")
 from data.serialize import SerializerSettings
